@@ -36,9 +36,7 @@ function jade($template) {
       $line = trim($line);
       if (!$line || !strncmp($line, '//', 2))
         continue;
-      if (!strncmp($line, 'extends ', 8))
-        $time = $getChangeTime(substr($line, 8), $time);
-      else if (!strncmp($line, 'include ', 8))
+      if (!strncmp($line, 'extends ', 8) || !strncmp($line, 'include ', 8))
         $time = $getChangeTime(substr($line, 8), $time);
     }
     fclose($fp);
