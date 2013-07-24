@@ -20,8 +20,11 @@ class tpl {
     return a::get(self::$vars, $key, $default);       
   }
 
-  static function load($template='default', $vars=array(), $return=false) {    
-    $file = c::get('root.templates') . '/' . $template . '.php';
+  static function load($template='default', $vars=array(), $return=false) {
+    $templates = c::get('root.templates');
+    $file = "$templates/$template.php";
+    if (!file_exists($file) && file_exists("$templates/$template.jade"))
+      $file = jade($template);
     return self::loadFile($file, $vars, $return);
   }
   
