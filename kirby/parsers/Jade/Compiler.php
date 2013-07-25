@@ -880,10 +880,12 @@ class Compiler {
                     $this->prettyprint = false;
 
                     if ($key == 'class') {
-                        $value = $this->createCode('echo is_array(%1$s) ? implode(" ", %1$s) : %1$s', $value);
+                        $code = $this->handleCode($value);
+                        $value = $this->createCode($code[0] . '; echo is_array(%1$s) ? implode(" ", %1$s) : %1$s', $code[1]);
                     }
                     elseif (strpos($key, 'data-') !== false) {
-                        $value = $this->createCode('echo is_array(%1$s) ? json_encode(%1$s) : %1$s', $value);
+                        $code = $this->handleCode($value);
+                        $value = $this->createCode($code[0] . ';echo is_array(%1$s) ? json_encode(%1$s) : %1$s', $code[1]);
                     }else{
                         $value = $this->createCode('echo %1$s', $value);
                     }
