@@ -63,6 +63,15 @@ function snippet($snippet, $data=array(), $return=false) {
   return tpl::loadFile(c::get('root.snippets') . '/' . $snippet . '.php', $data, $return);
 }
 
+// delegate rendering to another page
+function render($page) {
+  $oldPage = tpl::get('page');
+  tpl::set('page', $page);
+  $html = tpl::load($page->template(), array(), true);
+  tpl::set('page', $oldPage);
+  return $html;
+}
+
 // embed a stylesheet tag
 function css($url, $media=false) {
   $url = (str::match($url, '~(^\/\/|^https?:\/\/)~'))? $url : url(ltrim($url, '/'));
