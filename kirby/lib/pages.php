@@ -138,11 +138,10 @@ class page extends obj {
 
     $name = (!$this->intendedTemplate) ? c::get('tpl.default') : $this->intendedTemplate;
     
-    // construct the template file 
-    $file = c::get('root.templates') . '/' . $name . '.php';
-    
     // check if the template file exists and go back to the fallback    
-    if(!file_exists($file)) $name = c::get('tpl.default');
+    $root = c::get('root.templates');
+    if(!file_exists("$root/$name.php") && !file_exists("$root/$name.jade"))
+      $name = c::get('tpl.default');
 
     return $name;
         
