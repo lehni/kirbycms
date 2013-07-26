@@ -67,7 +67,7 @@ function snippet($snippet, $data=array(), $return=false) {
 function render($page) {
   $oldPage = tpl::get('page');
   tpl::set('page', $page);
-  $html = tpl::load($page->template(), array(), true);
+  $html = tpl::load($page->template(true), array(), true);
   tpl::set('page', $oldPage);
   return $html;
 }

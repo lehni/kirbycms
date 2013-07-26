@@ -134,17 +134,39 @@ class page extends obj {
     return ($this->prevVisible($sort, $direction)) ? true : false; 
   }
 
-  function template() {
-
-    $name = (!$this->intendedTemplate) ? c::get('tpl.default') : $this->intendedTemplate;
-    
+  function template($withExtension=false) {
+    $default = c::get('tpl.default');
+    $name = (!$this->intendedTemplate) ? $default : $this->intendedTemplate;
     // check if the template file exists and go back to the fallback    
     $root = c::get('root.templates');
-    if(!file_exists("$root/$name.php") && !file_exists("$root/$name.jade"))
-      $name = c::get('tpl.default');
 
-    return $name;
-        
+    $checkExtension = function($name, $extension) use($withExtension, $root) {
+      if (file_exists("$root/$name.$extension"))
+        return $withExtension ? "$name.$extension" : $name;
+      return false;
+    };
+  
+    $engines = c::get('tpl.engines');
+    foreach($engines as $extension => $engine) {
+      $res = $checkExtension($name, $extension);
+      if ($res)
+        break;
+    }
+    if (!$res && $name != $default) {
+      // fall back to default, but don't check php since that'll be the final
+      // fall-back
+      $name = $default;
+      foreach($engines as $extension => $engine) {
+        if ($engine != 'php') {
+          $res = $checkExtension($name, $extension);
+          if ($res)
+            break;
+        }
+      }
+    }
+    if (!$res)
+      $res = $withExtension ? "$name.php" : $name;
+    return $res;
   }
 
   function hasTemplate() {
