@@ -26,7 +26,7 @@ class tpl {
     $engine = $engines[$extension];
     $file = c::get('root.templates') . '/' . $template;
     if ($engine)
-      $file = $engine(basename($template, ".$extension"));
+      $file = $engine(basename($template, '.' . $extension));
     return self::loadFile($file, $vars, $return);
   }
   

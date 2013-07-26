@@ -11,7 +11,7 @@ if(!defined('KIRBY')) die('Direct access is not allowed');
 
 spl_autoload_register(function($class) {
     if(strstr($class, 'Jade'))
-        include_once(__DIR__ . '/../parsers/' . str_replace('\\', DIRECTORY_SEPARATOR, $class) . '.php');
+        include_once(str_replace('\\', DIRECTORY_SEPARATOR, $class) . '.php');
 });
 
 function jade($template) {
@@ -57,3 +57,10 @@ function jade($template) {
     file_put_contents($cache, $jade->render("$templates/$template.jade"));
   return $cache;
 }
+
+// Register the jade engine as a handler for templates
+$engines = c::get('tpl.engines');
+$engines['jade'] = function($template) {
+  return jade($template);
+};
+c::set('tpl.engines', $engines);

@@ -34,11 +34,8 @@ c::set('404.header', true);
 
 // default template name
 c::set('tpl.default', 'default');
-c::Set('tpl.engines', array(
-  'php' => null,
-  'jade' => function($template) {
-    return jade($template);
-  }
+c::set('tpl.engines', array(
+  'php' => null
 ));
 
 // enable php errors
