@@ -7,6 +7,9 @@ html
     meta(name="keywords", content=html($site->keywords()))
     meta(name="robots", content="index, follow")
     link(rel="stylesheet", href=url("assets/styles/styles.css"))
+    script.
+      if (window.devicePixelRatio > 1)
+        document.cookie = 'HTTP_USE_RETINA=1;path=/';
   body
     header
       h1

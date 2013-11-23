@@ -36,7 +36,15 @@ RewriteRule ^panel/(.*) panel/index.php [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*) index.php [L]
- 
+
+# Retina support! http://shauninman.com/tmp/retina/
+RewriteCond %{HTTP_COOKIE} HTTP_USE_RETINA [NC]
+RewriteCond %{REQUEST_FILENAME} !@2x
+RewriteRule ^(.*)\.(gif|jpg|png)$ $1@2x.$2
+# if @2x isn't available fulfill the original request
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^(.*)@2x\.(gif|jpg|png)$ $1.$2
+
 </IfModule>
 
 
