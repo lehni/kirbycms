@@ -404,6 +404,16 @@ class kirbytext {
     // build the embed url for the iframe    
     $url = 'http://player.vimeo.com/video/' . $id;
 
+    $query = array();
+    $names = array('title', 'byline', 'portrait');
+    foreach ($names as $name) {
+      $value = a::get($params, $name, c::get('kirbytext.vimeo.' . $name, null));
+      if (isset($value))
+        $query[] = $name . '=' . $value;
+    }
+    if (count($query) > 0)
+      $url .= '?' . implode('&', $query);
+
     // default width and height if no custom values are set
     if(empty($params['width']))  $params['width']  = c::get('kirbytext.video.width');
     if(empty($params['height'])) $params['height'] = c::get('kirbytext.video.height');

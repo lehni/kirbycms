@@ -138,6 +138,14 @@ embedded flash videos from youtube or vimeo
 c::set('kirbytext.video.width', 480); 
 c::set('kirbytext.video.height', 358); 
 
+/*
+Vimeo Defaults
+*/
+
+c::set('kirbytext.vimeo.title', 0); 
+c::set('kirbytext.vimeo.byline', 0); 
+c::set('kirbytext.vimeo.portrait', 0); 
+
 
 /* 
 
