@@ -10,8 +10,8 @@
 if(!defined('KIRBY')) die('Direct access is not allowed');
 
 spl_autoload_register(function($class) {
-    if(strstr($class, 'Jade'))
-        include_once(str_replace('\\', DIRECTORY_SEPARATOR, $class) . '.php');
+  if(strstr($class, 'Jade'))
+    include_once(str_replace('\\', DIRECTORY_SEPARATOR, $class) . '.php');
 });
 
 function jade($template) {
@@ -21,7 +21,7 @@ function jade($template) {
   $getChangeTime = function($template, $time) use (&$getChangeTime, $templates) {
     $file = "$templates/$template.jade";
     $t = @filectime($file);
-    if ($t === FALSE)
+    if ($t === false)
       die("Can't open jade file '$file'");
     if ($t > $time)
       $time = $t;
@@ -31,7 +31,7 @@ function jade($template) {
     // dependencies.
     while (true) {
       $line = fgets($fp);
-      if ($line === FALSE)
+      if ($line === false)
         break;
       $line = trim($line);
       if (!$line || !strncmp($line, '//', 2))
@@ -53,7 +53,7 @@ function jade($template) {
   $t = @filectime($cache);
   // Now get the modification time from the cached file, and regenerate if
   // the jade template or any of its dependencies have changed.
-  if ($t === FALSE || $t < $time)
+  if ($t === false || $t < $time)
     file_put_contents($cache, $jade->render("$templates/$template.jade"));
   return $cache;
 }
