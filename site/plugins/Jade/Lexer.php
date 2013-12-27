@@ -8,9 +8,9 @@ class Lexer {
     public $pipeless;
     public $input;
 
-    protected $deferred     = array();
-    protected $indentStack  = 0;
-    protected $stash        = array();
+    protected $deferred		= array();
+    protected $indentStack	= 0;
+    protected $stash		= array();
 
     public function __construct($input) {
         $this->setInput($input);
@@ -22,9 +22,9 @@ class Lexer {
      * @param   string  $input  input string
      */
     public function setInput($input) {
-        $this->input        = preg_replace("/\r\n|\r/", "\n", $input);
+        $this->input		= preg_replace("/\r\n|\r/", "\n", $input);
         $this->lineno       = 1;
-        $this->deferred     = array();
+        $this->deferred		= array();
         $this->indentStack  = array();
         $this->stash        = array();
     }
@@ -229,17 +229,17 @@ class Lexer {
         // http://www.w3.org/TR/CSS21/grammar.html#scanner
         //
         // ident:
-        //      -?{nmstart}{nmchar}*
+        //		-?{nmstart}{nmchar}*
         // nmstart:
-        //      [_a-z]|{nonascii}|{escape}
+        //		[_a-z]|{nonascii}|{escape}
         // nonascii:
-        //      [\240-\377]
+        //		[\240-\377]
         // escape:
-        //      {unicode}|\\[^\r\n\f0-9a-f]
+        //		{unicode}|\\[^\r\n\f0-9a-f]
         // unicode:
-        //      \\{h}{1,6}(\r\n|[ \t\r\n\f])?
+        //		\\{h}{1,6}(\r\n|[ \t\r\n\f])?
         // nmchar:
-        //      [_a-z0-9-]|{nonascii}|{escape}
+        //		[_a-z0-9-]|{nonascii}|{escape}
         //
         // /^(-?(?!=[0-9-])(?:[_a-z0-9-]|[\240-\377]|\\{h}{1,6}(?:\r\n|[ \t\r\n\f])?|\\[^\r\n\f0-9a-f])+)/
         return $this->scan('/^[.]([\w-]+)/','class');
@@ -397,16 +397,16 @@ class Lexer {
             $str = mb_substr($matches[0],1,mb_strlen($matches[0])-2);
 
             $token = $this->token('attributes');
-            $token->attributes  = array();
-            $token->escaped     = array();
-            $token->selfClosing = false;
+            $token->attributes	= array();
+            $token->escaped		= array();
+            $token->selfClosing	= false;
 
-            $key    = '';
-            $val    = '';
-            $quote  = '';
-            $states = array('key');
-            $escapedAttribute   = '';
-            $previousChar       = '';
+            $key	= '';
+            $val	= '';
+            $quote	= '';
+            $states	= array('key');
+            $escapedAttribute	= '';
+            $previousChar		= '';
 
             $state = function() use(&$states) {
                 return $states[count($states)-1];
@@ -442,7 +442,7 @@ class Lexer {
                             ,''
                             ,$key
                         );
-                        $token->escaped[$key]   = $escapedAttribute;
+                        $token->escaped[$key]	= $escapedAttribute;
                         $token->attributes[$key]= ('' == $val) ? true : $interpolate($val);
 
                         $key = '';

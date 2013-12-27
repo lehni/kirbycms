@@ -29,9 +29,9 @@ class Compiler {
     );
 
     protected $selfClosing  = array('meta', 'img', 'link', 'input', 'source', 'area', 'base', 'col', 'br', 'hr');
-    protected $phpKeywords  = array('true','false','null','switch','case','default','endswitch','if','elseif','else','endif','while','endwhile','do','for','endfor','foreach','endforeach','as','unless');
-    protected $phpOpenBlock = array('switch','if','elseif','else','while','do','for','foreach','unless');
-    protected $phpCloseBlock= array('endswitch','endif','endwhile','endfor','endforeach');
+    //protected $phpKeywords  = array('true','false','null','switch','case','default','endswitch','if','elseif','else','endif','while','endwhile','do','for','endfor','foreach','endforeach','as','unless');
+    protected $phpOpenBlock = array('switch','elseif','if','else','while','do','foreach','for','unless');
+    //protected $phpCloseBlock= array('endswitch','endif','endwhile','endfor','endforeach');
 
     public function __construct($prettyprint=false) {
         $this->prettyprint = $prettyprint;
@@ -154,281 +154,6 @@ class Compiler {
         return $ok;
     }
 
-    public function handleCode($input, $ns='') {
-        // needs to be public because of the closure $handle_recursion
-
-        $result = array();
-
-        if (!is_string($input)) {
-            throw new \Exception('Expecting a string of javascript, got: ' . gettype($input));
-        }
-
-        if (strlen($input) == 0) {
-            throw new \Exception('Expecting a string of javascript, empty string received.');
-        }
-
-        if($input[0] == '"' && $input[strlen($input) - 1] == '"') {
-            return array($input);
-        }
-
-        preg_match_all(
-            '/(?<![<>=!])=(?!>)|[\[\]{}(),;.]|(?!:):|->/', // punctuation
-            $input,
-            $separators,
-            PREG_SET_ORDER | PREG_OFFSET_CAPTURE
-        );
-        $_separators = array();
-        foreach ($separators as $sep) {
-            array_push($_separators, $sep[0]);
-        }
-        $separators = $_separators;
-
-        if (count($separators) == 0) {
-            return array($input);
-        }
-
-        // add a pseudo separator for the end of the input
-        array_push($separators, array(null, strlen($input)));
-
-        if ($separators[0][1] == 0) {
-            throw new \Exception('Expecting a variable name got: ' . $input);
-        }
-
-        $varname = substr($input,0,$separators[0][1]);
-
-        $get_middle_string = function($start, $end) use ($input) {
-            $offset = $start[1] + strlen($start[0]);
-
-            return substr(
-                $input,
-                $offset,
-                isset($end) ? $end[1] - $offset: strlen($input)
-            );
-        };
-
-        $host = $this;
-        $handle_recursion = function ($arg, $ns='') use ($input, &$result, $host, $get_middle_string) {
-            list($start,$end) = $arg;
-            $str    = trim($get_middle_string($start, $end));
-            if(!strlen($str))
-                return '';
-
-            $_code  = $host->handleCode($str, $ns);
-
-            if (count($_code) > 1) {
-                $result = array_merge($result, array_slice($_code, 0, -1));
-                return array_pop($_code);
-            }
-
-            return $_code[0];
-        };
-
-        $handle_code_inbetween = function() use(&$separators, $ns, $handle_recursion) {
-            $arguments  = array();
-            $count      = 1;
-
-            $start      = current($separators);
-            $end_pair   = array('['=>']', '{'=>'}', '('=>')', ','=>false);
-            $open       = $start[0];
-            if(!isset($open))
-                return $arguments;
-            $close      = $end_pair[$start[0]];
-
-            do {
-                // reset start
-                $start = current($separators);
-
-                do {
-                    $curr   = next($separators);
-
-                    if ($curr[0] == $open) $count++;
-                    if ($curr[0] == $close) $count--;
-
-                } while ($curr[0] != null && $count > 0 && $curr[0] != ',');
-
-                $end    = current($separators);
-
-                if ($end != false && $start[1] != $end[1]) {
-                    $tmp_ns = $ns*10 +count($arguments);
-                    $arg    = $handle_recursion(array($start, $end), $tmp_ns);
-
-                    array_push($arguments, $arg);
-                }
-
-            } while ($curr != null && $count > 0);
-
-            if ($close && $count) {
-                throw new \Exception('Missing closing: ' . $close);
-            }
-
-            if ($end !== false)
-                next($separators);
-
-            return $arguments;
-        };
-
-        $get_next = function ($i) use($separators) {
-            if (isset($separators[$i+1])) {
-                return $separators[$i+1];
-            }
-        };
-
-        // using next() ourselves so that we can advance the array pointer inside inner loops
-        while (key($separators) !== null) {
-            // $sep[0] - the separator string due to PREG_SPLIT_OFFSET_CAPTURE flag
-            // $sep[1] - the offset due to PREG_SPLIT_OFFSET_CAPTURE
-            $sep= current($separators);
-
-            if ($sep[0] == null) break; // end of string
-
-            $name = $get_middle_string($sep, $get_next(key($separators)));
-
-            $v = "\$__{$ns}";
-            switch ($sep[0]) {
-                // translate the javascript's obj.attr into php's obj->attr or obj['attr']
-                case '.':
-                    // TODO: Move isset(->)?->:[]; to a function
-                    $accessor= "{$v}=isset({$varname}->{$name}) ? {$varname}->{$name} : ((!is_object({$varname}))?({$varname}['{$name}']):'')";
-                    array_push($result, $accessor);
-                    $varname = $v;
-
-                    break;
-
-                // funcall
-                case '(':
-                    $arguments  = $handle_code_inbetween();
-                    $call       = $varname . '(' . implode(', ', $arguments) . ')';
-                    $cs = current($separators);
-                    while($cs && ($cs[0] == '->' || $cs[0] == '(' || $cs[0] == ')')) {
-                        $call .= $cs[0] . $get_middle_string(current($separators), $get_next(key($separators)));
-                        $cs = next($separators);
-                    }
-                    $varname    = $v;
-                    array_push($result, "{$v}={$call}");
-
-                    break;
-
-                // mixin arguments
-                case ',':
-                    $arguments  = $handle_code_inbetween();
-                    if($arguments)
-                        $varname = $varname . ', ' . implode(', ', $arguments);
-                    //array_push($result, $varname);
-
-                    break;
-
-                /*case '[':
-                    $arguments = $handle_code_inbetween();
-                    $varname = $varname . '[' . implode($arguments) . ']';
-
-                    break;*/
-
-                case '=':
-                    if (preg_match('/^[[:space:]]*$/', $name)) {
-                        next($separators);
-                        $arguments  = $handle_code_inbetween();
-                        $varname    = $varname . ' = ' . implode($arguments);
-                    }else{
-                        $varname    = "{$varname} = " . $handle_recursion(array($sep, end($separators)));
-                    }
-
-                    break;
-
-                default:
-                    if(($name !== FALSE && $name !== '') || $sep[0] != ')')
-                        $varname = $varname . $sep[0] . $name;
-                    break;
-            }
-
-            next($separators);
-        }
-        array_push($result, $varname);
-        return $result;
-    }
-
-    public function handleString($input) {
-        $result         = array();
-        $results_string = array();
-
-        $separators = preg_split(
-            '/[+](?!\\()/', // concatenation operator - only js
-            $input,
-            -1,
-            PREG_SPLIT_NO_EMPTY | PREG_SPLIT_OFFSET_CAPTURE | PREG_SPLIT_DELIM_CAPTURE
-        );
-
-        foreach ($separators as $i => $part) {
-            // $sep[0] - the separator string due to PREG_SPLIT_OFFSET_CAPTURE flag
-            // $sep[1] - the offset due to PREG_SPLIT_OFFSET_CAPTURE
-
-            $sep = substr(
-                $input,
-                strlen($part[0]) + $part[1] + 1,
-                isset($separators[$i+1]) ? $separators[$i+1][1] : strlen($input)
-            );
-            // handleCode() and the regex bellow dont like spaces
-            $part[0] = trim($part[0]);
-
-            if (preg_match('/^(([\'"]).*?\2)(.*)$/', $part[0], $match)) {
-                if (mb_strlen(trim($match[3]))) {
-                    throw new \Exception('Unexcpected value: ' . $match[3]);
-                }
-                array_push($results_string, $match[1]);
-
-            }else{
-                $code = $this->handleCode($part[0]);
-
-                $result = array_merge($result, array_slice($code,0,-1));
-                array_push($results_string, array_pop($code));
-            }
-        }
-
-        array_push($result, implode(' . ', $results_string));
-        return $result;
-    }
-
-    protected function createStatements() {
-
-        if (func_num_args()==0) {
-            throw new Exception();
-        }
-
-        $arguments = func_get_args();
-        $statements= array();
-        $variables = array();
-
-        foreach ($arguments as $arg) {
-
-            // shortcut for constants
-            if ($this->isConstant($arg)) {
-                if($arg === 'undefined')
-                    $arg = 'null';
-                array_push($variables, $arg);
-                continue;
-            }
-
-            // if we have a php variable assume that the string is good php
-            if (preg_match('/&?\${1,2}[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*/', $arg)) {
-                array_push($variables, $arg);
-                continue;
-            }
-
-            if (preg_match('/^([\'"]).*?\1/', $arg, $match)) {
-                $code= $this->handleString(trim($arg));
-            } else {
-                // TODO: move this to handleCode
-                $arg = preg_replace('/\bvar\b/','',$arg);
-                $code = $this->handleCode(trim($arg));
-            }
-
-            $statements = array_merge($statements, array_slice($code,0,-1));
-            array_push($variables, array_pop($code));
-        }
-
-        array_push($statements, $variables);
-        return $statements;
-    }
-
     protected function createPhpBlock($code, $statements = null) {
 
         if ($statements == null) {
@@ -463,9 +188,7 @@ class Compiler {
         if (func_num_args()>1) {
             $arguments = func_get_args();
             array_shift($arguments); // remove $code
-            $statements= $this->apply('createStatements', $arguments);
-
-            return $this->createPhpBlock($code, $statements);
+            return $this->createPhpBlock($code, array($arguments));
         }
 
         return $this->createPhpBlock($code);
@@ -613,7 +336,7 @@ class Compiler {
                 }
 
                 array_unshift($arguments, $attributes);
-                $statements= $this->apply('createStatements', $arguments);
+                $statements= array($arguments);
 
                 $variables = array_pop($statements);
                 $variables = implode(', ', $variables);

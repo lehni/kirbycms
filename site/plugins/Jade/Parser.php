@@ -30,7 +30,7 @@ class Parser {
             $this->filename = $filename;
         }
 
-        if($this->input[0] == "\xef" && $this->input[1] == "\xbb" && $this->input[2] == "\xbf")
+        if (!strncmp($this->input, "\xef\xbb\xbf", 3))
             $this->input = substr($this->input, 3);
 
         $this->lexer = new Lexer($this->input);
