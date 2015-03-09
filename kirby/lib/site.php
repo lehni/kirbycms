@@ -390,8 +390,8 @@ class site extends obj {
         
   }
   
-  function modified() {
-    return ($this->modified) ? $this->modified : time();
+  function modified($format=false) {
+    return ($this->modified) ? ($format ? date($format, $this->modified) : $this->modified) : ($format ? date($format) : time());
   }
 
   function dataCacheID() {
@@ -430,8 +430,10 @@ class site extends obj {
       
       if(c::get('lang.detect')) {      
         // detect the current language
-        $detected = str::split(server::get('http_accept_language'), '-');
-        $detected = str::trim(a::first($detected));
+        $detected = str::split(server::get('http_accept_language'), ',');
+        $detected = a::first($detected);
+        $detected = str::split($detected, '-');
+        $detected = a::first($detected);
         $detected = (!in_array($detected, $available)) ? c::get('lang.default') : $detected;
 
         // set the detected code as current code          
